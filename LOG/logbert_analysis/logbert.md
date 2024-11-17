@@ -51,9 +51,8 @@ concerns：
 1. Drain似乎还不支持处理xlsx格式的日志，默认日志格式是文本形式。使用时需要调整
 2. 怀疑logbert是否能支持处理中文
 3. 运行BGL的 'logbert.py train' 时报错GPU内存不足，已知BGL在日志总数和大小上远小于HDFS，怀疑可能与BGL的log key数目过多或序列划分方式（滑动窗口）有关
-### sampling
-日志序列构建和处理
 
+### sampling：日志序列构建和处理
 在HDFS中用mapping()和hdfs_sampling()函数实现，按session id构建，
 
 在mapping函数中借助HDFS.log_templates.csv文件将日志按照session id分组，将分组结果写到hdfs_log_templates.json文件中； 
@@ -63,22 +62,8 @@ concerns：
 在BGL和TBird中，按滑动窗口构建。
 
 ### 构建训练数据集
-HDFS需要读取anamoly_label文件，BGL需要读取日志文件中的label。分别用正常的日志数据构建用于训练的数据集
+HDFS需要读取anamoly_label文件，BGL需要读取日志文件中的label。分别取出其中正常的日志数据构建用于训练的数据集
 
-## logbert.py
-
-### hdfs上实现：
-HDFS_v1数据集
-```bash
-hdfs
-├── anomaly_label.csv 异常数据标注
-├── Event_occurrence_matrix.csv 事件发生矩阵
-├── Event_traces.csv
-├── HDFS.log   数据集
-├── HDFS.log_templates.csv
-├── HDFS.npz
-└── README.md
-```
 ## logbert.py 
 logbert上的实现。options字典存储一系列BERT模型需要的参数包括输出的各个路径；序列划分大小；掩码率；样本率；
 在HDFS 和 BGL中，除输出路径外不一样的选项只有
@@ -93,3 +78,77 @@ options["num_candidates"] =
 1. vocab：调用bert_pytorch/dataset/vacab.py中定义的类构建词汇表，并存储到output/{该数据集}/文件夹下
 2. train：创造 bert_pytorch/train_log.py的Train 实例，调用train训练模型
 3. preditct：调用 bert_Pytorch/predict.log的Predictor 实例，调用predict预测让模型做日志检测
+
+## hdfs数据集上实例
+### 输入输出文件夹
+根据logbert设定，需数据集平放在～/.dataset/hdfs文件夹下
+HDFS_v1数据集
+```bash
+hdfs
+├── anomaly_label.csv 异常数据标注
+├── Event_occurrence_matrix.csv 事件发生矩阵
+├── Event_traces.csv
+├── HDFS.log   数据集
+├── HDFS.log_templates.csv
+├── HDFS.npz
+└── README.md
+```
+输出文件夹：logbert/output/hdfs
+```bash
+output/hdfs
+├── bert                            logbert.py 运行时中间结果文件夹
+│   ├── best_bert.pth
+│   ├── best_center.pt
+│   ├── best_total_dist.pt
+│   ├── parameters.txt
+│   ├── test_abnormal_errors.pkl
+│   ├── test_abnormal_results
+│   ├── test_normal_errors.pkl
+│   ├── test_normal_results
+│   ├── train_log2.csv
+│   ├── train_valid_loss.png
+│   └── valid_log2.csv
+├── deeplog                         deeplog.py 运行时中间结果文件夹
+├── HDFS.log_structured.csv         结构化的日志数据集，
+├── HDFS.log_templates.csv          drain parser输出结果
+├── hdfs_log_templates.json         按序列划分窗口时的中间文件
+├── hdfs_sequence.csv               处理好的日志事件序列
+├── loganomaly                      loganomaly.py 运行时中间结果文件夹
+├── test_abnormal                   生成训练数据集时的副产物
+├── test_normal
+├── train                           数据处理生成的训练用数据集
+└── vocab.pkl
+```
+### 相关文件内容格式示例
+```
+原始的HDFS.log
+081109 203518 143 INFO dfs.DataNode$DataXceiver: Receiving block blk_-1608999687919862906 src: /10.250.19.102:54106 dest: /10.250.19.102:50010
+081109 203518 35 INFO dfs.FSNamesystem: BLOCK* NameSystem.allocateBlock: /mnt/hadoop/mapred/system/job_200811092030_0001/job.jar. blk_-1608999687919862906
+081109 203519 143 INFO dfs.DataNode$DataXceiver: Receiving block blk_-1608999687919862906 src: /10.250.10.6:40524 dest: /10.250.10.6:50010
+
+Drain parer 生成的中间数据HDFS.log_templates.csv，并在mapping建立日志序列时被排序
+EventId,EventTemplate,Occurrences
+9b7aa7a3,Receiving block blk_<*> src: <*> dest: /<*>:50010,1723232
+81358cb3,BLOCK* NameSystem.allocateBlock: <*> blk_<*>,575061
+
+Drain parser 生成的中间数据HDFS.log_structured.csv，将原始log文件csv化，后面没用到
+LineId,Date,Time,Pid,Level,Component,Content,EventId,EventTemplate
+1,081109,203518,143,INFO,dfs.DataNode$DataXceiver,Receiving block blk_-1608999687919862906 src: /10.250.19.102:54106 dest: /10.250.19.102:50010,9b7aa7a3,Receiving block blk_<*> src: <*> dest: /<*>:50010
+2,081109,203518,35,INFO,dfs.FSNamesystem,BLOCK* NameSystem.allocateBlock: /mnt/hadoop/mapred/system/job_200811092030_0001/job.jar. blk_-1608999687919862906,81358cb3,BLOCK* NameSystem.allocateBlock: <*> blk_<*>
+
+创建序列过程中mapping生成的HDFS.log_templates.json
+{"9b7aa7a3": 1, "2f313c72": 2, "2e1cf0aa": 3, "797b9c47": 4, "b0023896": 5, "bb837bbd": 6, "81358cb3": 7, "6caae5bd": 8, "be6f070c": 9, "d23206c6": 10, "fa05ffa7": 11, "53c00e5f": 12, "d7507d1e": 13, "0d168c98": 14, "cf9b33dc": 15, "d6115493": 16, "46f6e99a": 17, "b46e298a": 18, "fac2c191": 19, "4ed2a0c0": 20, "5e47c5c3": 21, "1995da3b": 22, "1d48c538": 23, "b3ef6470": 24, "ceedf750": 25, "caed8b80": 26, "6f83a284": 27, "5832ad42": 28, "c859931b": 29, "5ac8245b": 30, "190eb501": 31, "f8ba9329": 32, "47b367ea": 33, "1ff93be5": 34, "72988c9b": 35, "78ad37b3": 36, "ffa3fe68": 37, "60600882": 38, "b55f27b2": 39, "9111794a": 40, "ebe1d2fb": 41, "a26fadbc": 42, "f52097f4": 43, "0d527039": 44, "17ee882d": 45, "fb314c6d": 46, "0555f7e9": 47}
+
+生成的日志序列文件hdfs_sequence.csv
+BlockId,EventSequence
+blk_-1608999687919862906,"[1, 7, 1, 1, 3, 3, 4, 4, 3, 4, 2, 2, 2, 11, 1, 12, 11, 1, 21, 20, 2, 2, 8, 20, 11, 11, 1, 1, 12, 21, 2, 2, 1, 11, 1, 12, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 21, 20, 11, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 13, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 14, 11, 1, 8, 8, 8, 8, 8, 12, 8, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]"
+blk_7503483334202473044,"[1, 1, 7, 1, 3, 4, 3, 4, 3, 4, 2, 2, 2, 8, 10, 10, 6, 6, 6, 5, 5, 5]"
+
+生成的训练用数据集train
+1 1 1 7 3 4 3 4 3 4 2 2 2 6 6 6 5 5 5
+1 1 1 7 3 4 3 4 3 4 2 2 2 6 6 6 5 5 5
+1 1 7 1 3 4 3 4 3 4 2 2 2 10 6 6 6 5 5 5
+7 1 1 1 2 2 2 3 4 3 4 3 4 9 8 9 8 9 8 6 6 6 5 5 5
+1 7 1 1 3 4 4 3 4 2 2 2 3 6 6 6 5 5 5
+1 7 1 1 3 4 3 4 2 2 3 4 2 9 9 8 10 6 6 6 5 5 5
+```
