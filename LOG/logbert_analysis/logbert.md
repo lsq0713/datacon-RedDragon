@@ -103,14 +103,14 @@ hdfs
 ```bash
 output/hdfs
 ├── bert                            logbert.py 运行时中间结果文件夹
-│   ├── best_bert.pth
-│   ├── best_center.pt
-│   ├── best_total_dist.pt
-│   ├── parameters.txt
-│   ├── test_abnormal_errors.pkl
-│   ├── test_abnormal_results
-│   ├── test_normal_errors.pkl
-│   ├── test_normal_results
+│   ├── best_bert.pth               model path
+│   ├── best_center.pt              best center path, train_log生成
+│   ├── best_total_dist.pt          total dist train_log生成
+│   ├── parameters.txt              存储训练模型时设置的选项参数
+│   ├── test_abnormal_errors.pkl    predictor.predict生成
+│   ├── test_abnormal_results       predictor.predict生成
+│   ├── test_normal_errors.pkl      predictor.predict生成
+│   ├── test_normal_results         predictor.predict生成
 │   ├── train_log2.csv
 │   ├── train_valid_loss.png
 │   └── valid_log2.csv
@@ -123,7 +123,7 @@ output/hdfs
 ├── test_abnormal                   生成训练数据集时的副产物
 ├── test_normal
 ├── train                           数据处理生成的训练用数据集
-└── vocab.pkl
+└── vocab.pkl                       logbert vocab生成文件
 ```
 ### 相关文件内容格式示例
 ```
