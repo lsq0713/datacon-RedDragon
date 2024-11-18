@@ -85,6 +85,11 @@ options["num_candidates"] =
 2. train：创造 bert_pytorch/train_log.py的Train 实例，调用train训练模型
 3. preditct：调用 bert_Pytorch/predict.log的Predictor 实例，调用predict预测让模型做日志检测
 
+### predict_log.py
+predict()函数通过两次调用help函数分别对test_normal和test_abnormal两个文件进行测试
+
+在选项中is_logkey设置为真的情况下比较预测结果与掩码的真实值
+
 ## hdfs数据集上实例
 ### 输入输出文件夹
 根据logbert设定，需数据集平放在～/.dataset/hdfs文件夹下
@@ -103,14 +108,14 @@ hdfs
 ```bash
 output/hdfs
 ├── bert                            logbert.py 运行时中间结果文件夹
-│   ├── best_bert.pth               model_path下文件夹？压缩，无可查看文本，train_log.py
+│   ├── best_bert.pth               train得到的预训练模型
 │   ├── best_center.pt              train_log.py生成
 │   ├── best_total_dist.pt          train_log.py生成
-│   ├── parameters.txt              存储模型参数设置
-│   ├── test_abnormal_errors.pkl    predict生成
-│   ├── test_abnormal_results       predict生成
-│   ├── test_normal_errors.pkl      predict生成
-│   ├── test_normal_results         predict生成
+│   ├── parameters.txt              记录设置的参数
+│   ├── test_abnormal_errors.pkl    predictor生成
+│   ├── test_abnormal_results       predictor生成
+│   ├── test_normal_errors.pkl      predictor生成
+│   ├── test_normal_results         predictor生成
 │   ├── train_log2.csv              train生成
 │   ├── train_valid_loss.png        train生成
 │   └── valid_log2.csv              train生成
@@ -120,8 +125,8 @@ output/hdfs
 ├── hdfs_log_templates.json         按序列划分窗口时的中间文件
 ├── hdfs_sequence.csv               处理好的日志事件序列
 ├── loganomaly                      loganomaly.py 运行时中间结果文件夹
-├── test_abnormal                   生成训练数据集时的副产物
-├── test_normal
+├── test_abnormal                   生成训练数据集时的得到的待测异常数据，在predict时测试用
+├── test_normal                     生成训练数据集时的得到的待测正常数据，在predict时测试用
 ├── train                           数据处理生成的训练用数据集
 └── vocab.pkl                       vocab生成的单词表
 ```
@@ -174,3 +179,23 @@ epoch,lr,time,loss
 1,8.5e-06,16:18:57,2.2150103283279083
 2,1.7e-05,16:19:03,1.5772566799731815
 3,2.55e-05,16:19:09,1.1299418903449003
+```
+## BGL数据集
+```
+数据集
+- 1117838570 2005.06.03 R02-M1-N0-C:J12-U11 2005-06-03-15.42.50.363779 R02-M1-N0-C:J12-U11 RAS KERNEL INFO instruction cache parity error corrected
+- 1117838570 2005.06.03 R02-M1-N0-C:J12-U11 2005-06-03-15.42.50.527847 R02-M1-N0-C:J12-U11 RAS KERNEL INFO instruction cache parity error corrected
+- 1117838570 2005.06.03 R02-M1-N0-C:J12-U11 2005-06-03-15.42.50.675872 R02-M1-N0-C:J12-U11 RAS KERNEL INFO instruction cache parity error corrected
+parse结果
+EventId,EventTemplate,Occurrences
+3aa50e45,instruction cache parity error corrected,105924
+b9250ad9,MidplaneSwitchController performing bit sparing on R<*>-M<*>-L<*>-U<*>-C bit <*>,964
+fc5f0940,generating core.<*>,1706751
+1840cbfe,"<*> ddr errors(s) detected and corrected on rank <*>, symbol <*>, bit <*>",33939
+828a502b,<*> <*> <*> error(s) (dcr <*>) detected and corrected,5040
+65f23e3e,"CE sym <*>, at <*>, mask <*>",201206
+147cfcff,total of <*> ddr error(s) detected and corrected,28485
+ba77ab8e,ddr: activating redundant bit steering: rank=<*> symbol=<*>,1314
+
+1840cbfe 65f23e3e 147cfcff 
+1840cbfe 1840cbfe 828a502b 828a502b 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe c3c18d52 c3c18d52 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe 1840cbfe
