@@ -20,12 +20,12 @@ logbert
 ### logparser：drain
 ![](parsing.png)
 
-程序使用drain，另外提供了spell的程序
+程序使用drain，另外提供了spell的代码
 
 Drain是一种基于固定深度树的在线日志解析
 
 流程：
-1. 正则匹配提取数据tokens
+1. 正则匹配提取日志内容tokens
 2. 从解析树的根节点开始，根据token的数量区分日志数据组，到达第一层日志节点
 3. 根据日志解析数据起始位置的token选择下一个内部节点
 4. token相似度搜索，将新加入的日志token与已有日志组的token相比较，最大相似度超过阈值则认为属于该日志组，否则创建新的日志组
@@ -34,18 +34,23 @@ Drain是一种基于固定深度树的在线日志解析
 
 参考链接：https://blog.csdn.net/qq_39378221/article/details/121212682?fromshare=blogdetail&sharetype=blogdetail&sharerId=121212682&sharerefer=PC&sharesource=2301_76811694&sharefrom=from_link
 
-调用：
+__调用：__
 
 1. 实例化一个Logarsers类，规定 日志形式，数据集路径，输出路径，解析树深度，相似度阈值，maxchild，正则匹配表达式，keep_para。其中相似度阈值 'st' 和树的深度 'deep' 是主要需要调整的。
-2. 调用类函数parser(log_file)，对数据集路径下的log_file进行parse
+2. 调用类函数parser(log_file)，对数据集路径下的日志文件进行parse
 
 在logbert/HDFS/data_process.py logbert/BGL/data_process.py中可以看到调用实例
 
 Drain 实现（以HDFS为例）：
 
-将log文件转为dataframe，提取日志格式中的'<//content>'内容提取tokens进行树匹配搜索。
+1. 借助日志格式参数将log文本文件转为易处理的dataframe，
+2. 从日志的'<//content>'列中进行正则匹配提取EventTemplate（内容中的不变文本）作为tokens用来做树匹配搜索
+3. 对每种EventTemplate计算哈希值作为EventId，作为后面查找EventTemplates的索引，存储到中间结果文件中
 
-借助搜索树和dataframe将每类事件的"EventId" "EventTemplate" "Occurrences"存到output/hdfs/HDFS.log_templates.csv文件中，由log生成的dataframe添加'EventId''EventTemplate'和"ParameterList"（可选）列后，存到/output/hdfs/HDFS.log_structured.csv文件中。
+__为后面提供支持的中间结果文件output/hdfs/HDFS.log_templates.csv：存储每类事件的"EventId" "EventTemplate" "Occurrences"
+即事件模板哈希值作为事件ID，正则匹配提取出的事件模板，事件发生次数），__
+
+由log生成的dataframe添加'EventId''EventTemplate'和"ParameterList"（可选）列后，存到/output/hdfs/HDFS.log_structured.csv文件中。
 
 concerns：
 1. Drain似乎还不支持处理xlsx格式的日志，默认日志格式是文本形式。使用时需要调整
@@ -53,14 +58,15 @@ concerns：
 3. 运行BGL的 'logbert.py train' 时报错GPU内存不足，已知BGL在日志总数和大小上远小于HDFS，怀疑可能与BGL的log key数目过多或序列划分方式（滑动窗口）有关
 
 ### sampling：日志序列构建和处理
-在HDFS中用mapping()和hdfs_sampling()函数实现，按session id构建，
+paper称对HDFS按照session id进行日志序列的划分用mapping()和hdfs_sampling()函数实现，实际上按block_id对数据分组，
 
-在mapping函数中借助HDFS.log_templates.csv文件将日志按照session id分组，将分组结果写到hdfs_log_templates.json文件中； 
+在mapping函数中借助上一步的结果HDFS.log_templates.csv将EventId映射到连续的自然数序列1,2,3,...，发生次数越多的排序越靠前，存到hdfs_log_templates.json文件中； 
 
-然后hdfs_sampling用mapping生成的文件和原始日志生成日志计数向量，得到每个日志序列中发生的日志事件组存到hdfs_sequence.csv文件中。
+然后hdfs_sampling用mapping生成的文件和原始日志生成日志计数向量，记录每个block中发生的所有日志事件组成序列存到hdfs_sequence.csv文件中。
+
+__这一步中间结果：hdfs_sequence.csv每个对象（block_id）和该对象上发生的事件的序列__
 
 在BGL和TBird中，按滑动窗口构建。
-
 ### 构建训练数据集
 HDFS需要读取anamoly_label文件，BGL需要读取日志文件中的label。分别取出其中正常的日志数据构建用于训练的数据集
 
@@ -121,6 +127,7 @@ output/hdfs
 ```
 ### 相关文件内容格式示例
 ```
+log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'
 原始的HDFS.log
 081109 203518 143 INFO dfs.DataNode$DataXceiver: Receiving block blk_-1608999687919862906 src: /10.250.19.102:54106 dest: /10.250.19.102:50010
 081109 203518 35 INFO dfs.FSNamesystem: BLOCK* NameSystem.allocateBlock: /mnt/hadoop/mapred/system/job_200811092030_0001/job.jar. blk_-1608999687919862906
