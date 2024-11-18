@@ -97,10 +97,10 @@ hdfs
 ```bash
 output/hdfs
 ├── bert                            logbert.py 运行时中间结果文件夹
-│   ├── best_bert.pth
-│   ├── best_center.pt
-│   ├── best_total_dist.pt
-│   ├── parameters.txt
+│   ├── best_bert.pth               model_path下文件夹？压缩，无可查看文本，train_log.py
+│   ├── best_center.pt              train_log.py生成
+│   ├── best_total_dist.pt          train_log.py生成
+│   ├── parameters.txt              log
 │   ├── test_abnormal_errors.pkl
 │   ├── test_abnormal_results
 │   ├── test_normal_errors.pkl
@@ -117,7 +117,7 @@ output/hdfs
 ├── test_abnormal                   生成训练数据集时的副产物
 ├── test_normal
 ├── train                           数据处理生成的训练用数据集
-└── vocab.pkl
+└── vocab.pkl                       vocab生成的单词表
 ```
 ### 相关文件内容格式示例
 ```
@@ -152,3 +152,18 @@ blk_7503483334202473044,"[1, 1, 7, 1, 3, 4, 3, 4, 3, 4, 2, 2, 2, 8, 10, 10, 6, 6
 1 7 1 1 3 4 4 3 4 2 2 2 3 6 6 6 5 5 5
 1 7 1 1 3 4 3 4 2 2 3 4 2 9 9 8 10 6 6 6 5 5 5
 ```
+bert下
+```
+valid_log2.csv
+epoch,lr,time,loss
+0,8.5e-06,16:18:56,2.5836814562479655
+1,1.7e-05,16:19:01,2.0286719957987467
+2,2.55e-05,16:19:07,1.3797042528788248
+3,3.4e-05,16:19:13,1.1736488660176596
+
+train_log2.csv
+epoch,lr,time,loss
+0,0.001,16:18:51,3.0098481283468357
+1,8.5e-06,16:18:57,2.2150103283279083
+2,1.7e-05,16:19:03,1.5772566799731815
+3,2.55e-05,16:19:09,1.1299418903449003
