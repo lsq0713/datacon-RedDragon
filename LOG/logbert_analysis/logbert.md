@@ -85,6 +85,11 @@ options["num_candidates"] =
 2. train：创造 bert_pytorch/train_log.py的Train 实例，调用train训练模型
 3. preditct：调用 bert_Pytorch/predict.log的Predictor 实例，调用predict预测让模型做日志检测
 
+### predict_log.py
+predict()函数通过两次调用help函数分别对test_normal和test_abnormal两个文件进行测试
+
+在选项中is_logkey设置为真的情况下比较预测结果与掩码的真实值
+
 ## hdfs数据集上实例
 ### 输入输出文件夹
 根据logbert设定，需数据集平放在～/.dataset/hdfs文件夹下
@@ -103,7 +108,7 @@ hdfs
 ```bash
 output/hdfs
 ├── bert                            logbert.py 运行时中间结果文件夹
-│   ├── best_bert.pth               model_path下文件夹？压缩，无可查看文本，train_log.py
+│   ├── best_bert.pth               train得到的预训练模型
 │   ├── best_center.pt              train_log.py生成
 │   ├── best_total_dist.pt          train_log.py生成
 │   ├── parameters.txt              记录设置的参数
@@ -120,8 +125,8 @@ output/hdfs
 ├── hdfs_log_templates.json         按序列划分窗口时的中间文件
 ├── hdfs_sequence.csv               处理好的日志事件序列
 ├── loganomaly                      loganomaly.py 运行时中间结果文件夹
-├── test_abnormal                   生成训练数据集时的副产物
-├── test_normal                     生成训练数据集时的副产物
+├── test_abnormal                   生成训练数据集时的得到的待测异常数据，在predict时测试用
+├── test_normal                     生成训练数据集时的得到的待测正常数据，在predict时测试用
 ├── train                           数据处理生成的训练用数据集
 └── vocab.pkl                       vocab生成的单词表
 ```
