@@ -66,7 +66,7 @@ paper称对HDFS按照session id进行日志序列的划分用mapping()和hdfs_sa
 
 __这一步中间结果：hdfs_sequence.csv每个对象（block_id）和该对象上发生的事件的序列__
 
-在BGL和TBird中，按滑动窗口构建。
+在BGL和TBird中，按滑动窗口构建。调用了logdeep/dataset/session.py程序中sliding_window函数构建滑动窗口
 ### 构建训练数据集
 HDFS需要读取anamoly_label文件，BGL需要读取日志文件中的label。分别取出其中正常的日志数据构建用于训练的数据集
 
