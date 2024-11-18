@@ -106,14 +106,14 @@ output/hdfs
 │   ├── best_bert.pth               model_path下文件夹？压缩，无可查看文本，train_log.py
 │   ├── best_center.pt              train_log.py生成
 │   ├── best_total_dist.pt          train_log.py生成
-│   ├── parameters.txt              log
-│   ├── test_abnormal_errors.pkl
-│   ├── test_abnormal_results
-│   ├── test_normal_errors.pkl
-│   ├── test_normal_results
-│   ├── train_log2.csv
-│   ├── train_valid_loss.png
-│   └── valid_log2.csv
+│   ├── parameters.txt              存储模型参数设置
+│   ├── test_abnormal_errors.pkl    predict生成
+│   ├── test_abnormal_results       predict生成
+│   ├── test_normal_errors.pkl      predict生成
+│   ├── test_normal_results         predict生成
+│   ├── train_log2.csv              train生成
+│   ├── train_valid_loss.png        train生成
+│   └── valid_log2.csv              train生成
 ├── deeplog                         deeplog.py 运行时中间结果文件夹
 ├── HDFS.log_structured.csv         结构化的日志数据集，
 ├── HDFS.log_templates.csv          drain parser输出结果
